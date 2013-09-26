@@ -123,9 +123,11 @@ var app = {
 	},
 	// Update DOM on a Received Event
 	receivedEvent : function(id) {
-		var parentElement = document.getElementById(id);
-		var listeningElement = parentElement.querySelector('.listening');
-		var receivedElement = parentElement.querySelector('.received');
+		
+		alert("receivedEvent");
+//		var parentElement = document.getElementById(id);
+//		var listeningElement = parentElement.querySelector('.listening');
+//		var receivedElement = parentElement.querySelector('.received');
 
 		alert("1");
 		var pushNotification = window.plugins.pushNotification;
@@ -134,10 +136,10 @@ var app = {
 			"ecb" : "app.onNotificationGCM"
 		});
 		alert("2");
-		listeningElement.setAttribute('style', 'display:none;');
-		receivedElement.setAttribute('style', 'display:block;');
-
-		console.log('Received Event: ' + id);
+//		listeningElement.setAttribute('style', 'display:none;');
+//		receivedElement.setAttribute('style', 'display:block;');
+//
+//		console.log('Received Event: ' + id);
 	},
 	// Application Constructor
 	initialize : function() {
