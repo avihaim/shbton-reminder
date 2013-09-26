@@ -128,7 +128,7 @@ var app = {
 //		var parentElement = document.getElementById(id);
 //		var listeningElement = parentElement.querySelector('.listening');
 //		var receivedElement = parentElement.querySelector('.received');
-
+ 
 		alert("1");
 		var pushNotification = window.plugins.pushNotification;
 		pushNotification.register(app.successHandler, app.errorHandler, {
