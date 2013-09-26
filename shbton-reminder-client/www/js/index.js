@@ -116,8 +116,8 @@ var app = {
 	successHandler : function(result) {
 		alert('Callback Success! Result = ' + result)
 	},
-	errorHandler : function(error) {
-		alert('Callback error! Result = ' +error);
+	errorHandler : function(e) {
+		alert('Callback error! Result = ' +e.name + ": " + e.message + " "  + e.fileName);
 	},
 	// Update DOM on a Received Event
 	receivedEvent : function(id) {
