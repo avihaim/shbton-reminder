@@ -111,14 +111,6 @@ var app = {
 	// function, we must explicity call 'app.receivedEvent(...);'
 	onDeviceReady : function() {
 		
-		alert("onDeviceReady");
-		var pushNotification = window.plugins.pushNotification;
-		alert("1");
-		pushNotification.register(app.successHandler, app.errorHandler, {
-			"senderID" : "346033639851",
-			"ecb" : "app.onNotificationGCM"
-		});
-		alert("2");
 		app.receivedEvent('deviceready');
 		
 		
@@ -133,10 +125,20 @@ var app = {
 	// Update DOM on a Received Event
 	receivedEvent : function(id) {
 		
+		alert("receivedEvent");
+		
 		var parentElement = document.getElementById(id);
         var listeningElement = parentElement.querySelector('.listening');
         var receivedElement = parentElement.querySelector('.received');
 
+		var pushNotification = window.plugins.pushNotification;
+		alert("1");
+		pushNotification.register(app.successHandler, app.errorHandler, {
+			"senderID" : "346033639851",
+			"ecb" : "app.onNotificationGCM"
+		});
+		alert("2");
+		
         listeningElement.setAttribute('style', 'display:none;');
         receivedElement.setAttribute('style', 'display:block;');
 
