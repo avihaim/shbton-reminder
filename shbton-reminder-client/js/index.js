@@ -102,7 +102,6 @@ var app = {
 	// Bind any events that are required on startup. Common events are:
 	// 'load', 'deviceready', 'offline', and 'online'.
 	bindEvents : function() {
-		alert("bindEvents");
 		document.addEventListener('deviceready', this.onDeviceReady, false);
 	},
 
@@ -111,7 +110,6 @@ var app = {
 	// The scope of 'this' is the event. In order to call the 'receivedEvent'
 	// function, we must explicity call 'app.receivedEvent(...);'
 	onDeviceReady : function() {
-		alert("onDeviceReady");
 		app.receivedEvent('deviceready');
 	},
 	// result contains any message sent from the plugin call
@@ -119,32 +117,25 @@ var app = {
 		alert('Callback Success! Result = ' + result)
 	},
 	errorHandler : function(error) {
-		alert(error);
+		alert('Callback error! Result = ' +error);
 	},
 	// Update DOM on a Received Event
 	receivedEvent : function(id) {
 		
 		alert("receivedEvent");
-//		var parentElement = document.getElementById(id);
-//		var listeningElement = parentElement.querySelector('.listening');
-//		var receivedElement = parentElement.querySelector('.received');
- 
-		alert("1");
+
 		var pushNotification = window.plugins.pushNotification;
+		alert("1");
 		pushNotification.register(app.successHandler, app.errorHandler, {
 			"senderID" : "346033639851",
 			"ecb" : "app.onNotificationGCM"
 		});
 		alert("2");
-//		listeningElement.setAttribute('style', 'display:none;');
-//		receivedElement.setAttribute('style', 'display:block;');
-//
-//		console.log('Received Event: ' + id);
+
 	},
 	// Application Constructor
 	initialize : function() {
 
-		alert("initialize");
 		this.bindEvents();
 
 		var self = this;
