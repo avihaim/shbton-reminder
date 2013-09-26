@@ -17,164 +17,167 @@
  * under the License.
  */
 var app = {
-		
-		slidePage : function(page) {
 
-			var currentPageDest, self = this;
+	slidePage : function(page) {
 
-			// If there is no current page (app just started) -> No transition:
-			// Position new page in the view port
-			if (!this.currentPage) {
-				$(page.el).attr('class', 'page stage-center');
-				$('body').append(page.el);
-				this.currentPage = page;
-				return;
-			}
+		var currentPageDest, self = this;
 
-			// Cleaning up: remove old pages that were moved out of the viewport
-			$('.stage-right, .stage-left').not('.homePage').remove();
-
-			if (page === app.homePage) {
-				// Always apply a Back transition (slide from left) when we go back
-				// to the search page
-				$(page.el).attr('class', 'page stage-left');
-				currentPageDest = "stage-right";
-			} else {
-				// Forward transition (slide from right)
-				$(page.el).attr('class', 'page stage-right');
-				currentPageDest = "stage-left";
-			}
-
+		// If there is no current page (app just started) -> No transition:
+		// Position new page in the view port
+		if (!this.currentPage) {
+			$(page.el).attr('class', 'page stage-center');
 			$('body').append(page.el);
+			this.currentPage = page;
+			return;
+		}
 
-			// Wait until the new page has been added to the DOM...
-			setTimeout(function() {
-				// Slide out the current page: If new page slides from the right ->
-				// slide current page to the left, and vice versa
-				$(self.currentPage.el).attr('class',
-						'page transition ' + currentPageDest);
-				// Slide in the new page
-				$(page.el).attr('class', 'page stage-center transition');
-				self.currentPage = page;
-			});
+		// Cleaning up: remove old pages that were moved out of the viewport
+		$('.stage-right, .stage-left').not('.homePage').remove();
 
-		},
+		if (page === app.homePage) {
+			// Always apply a Back transition (slide from left) when we go back
+			// to the search page
+			$(page.el).attr('class', 'page stage-left');
+			currentPageDest = "stage-right";
+		} else {
+			// Forward transition (slide from right)
+			$(page.el).attr('class', 'page stage-right');
+			currentPageDest = "stage-left";
+		}
 
-		showAlert : function(message, title) {
-			if (navigator.notification) {
-				navigator.notification.alert(message, null, title, 'OK');
+		$('body').append(page.el);
+
+		// Wait until the new page has been added to the DOM...
+		setTimeout(function() {
+			// Slide out the current page: If new page slides from the right ->
+			// slide current page to the left, and vice versa
+			$(self.currentPage.el).attr('class',
+					'page transition ' + currentPageDest);
+			// Slide in the new page
+			$(page.el).attr('class', 'page stage-center transition');
+			self.currentPage = page;
+		});
+
+	},
+
+	showAlert : function(message, title) {
+		if (navigator.notification) {
+			navigator.notification.alert(message, null, title, 'OK');
+		} else {
+			alert(title ? (title + ": " + message) : message);
+		}
+	},
+
+	registerEvents : function() {
+		$(window).on('hashchange', $.proxy(this.route, this));
+		$('body').on('mousedown', 'a', function(event) {
+			$(event.target).addClass('tappable-active');
+		});
+		$('body').on('mouseup', 'a', function(event) {
+			$(event.target).removeClass('tappable-active');
+		});
+	},
+
+	route : function() {
+		var self = this;
+		var hash = window.location.hash;
+		if (!hash) {
+			if (this.homePage) {
+				this.slidePage(this.homePage);
 			} else {
-				alert(title ? (title + ": " + message) : message);
+				this.homePage = new HomeView(this.store).render();
+				this.slidePage(this.homePage);
 			}
-		},
-
-		registerEvents : function() {
-			$(window).on('hashchange', $.proxy(this.route, this));
-			$('body').on('mousedown', 'a', function(event) {
-				$(event.target).addClass('tappable-active');
+			return;
+		}
+		var match = hash.match(this.detailsURL);
+		if (match) {
+			this.store.findById(Number(match[1]), function(employee) {
+				self.slidePage(new EmployeeView(employee).render());
 			});
-			$('body').on('mouseup', 'a', function(event) {
-				$(event.target).removeClass('tappable-active');
-			});
-		},
+		}
+	},
+	// Bind Event Listeners
+	//
+	// Bind any events that are required on startup. Common events are:
+	// 'load', 'deviceready', 'offline', and 'online'.
+	bindEvents : function() {
+		alert("bindEvents");
+		document.addEventListener('deviceready', this.onDeviceReady, false);
+	},
 
-		route: function() {
-		    var self = this;
-		    var hash = window.location.hash;
-		    if (!hash) {
-		        if (this.homePage) {
-		            this.slidePage(this.homePage);
-		        } else {
-		            this.homePage = new HomeView(this.store).render();
-		            this.slidePage(this.homePage);
-		        }
-		        return;
-		    }
-		    var match = hash.match(this.detailsURL);
-		    if (match) {
-		        this.store.findById(Number(match[1]), function(employee) {
-		            self.slidePage(new EmployeeView(employee).render());
-		        });
-		    }
-		},
+	// deviceready Event Handler
+	//
+	// The scope of 'this' is the event. In order to call the 'receivedEvent'
+	// function, we must explicity call 'app.receivedEvent(...);'
+	onDeviceReady : function() {
+		alert("onDeviceReady");
+		app.receivedEvent('deviceready');
+	},
+	// result contains any message sent from the plugin call
+	successHandler : function(result) {
+		alert('Callback Success! Result = ' + result)
+	},
+	errorHandler : function(error) {
+		alert(error);
+	},
+	// Update DOM on a Received Event
+	receivedEvent : function(id) {
+		var parentElement = document.getElementById(id);
+		var listeningElement = parentElement.querySelector('.listening');
+		var receivedElement = parentElement.querySelector('.received');
 
-    // Application Constructor
-    initialize: function() {
-    	
-    	alert("initialize");
-    	this.bindEvents();
-    	
-    	
-    	var self = this;
+		alert("1");
+		var pushNotification = window.plugins.pushNotification;
+		pushNotification.register(app.successHandler, app.errorHandler, {
+			"senderID" : "346033639851",
+			"ecb" : "app.onNotificationGCM"
+		});
+		alert("2");
+		listeningElement.setAttribute('style', 'display:none;');
+		receivedElement.setAttribute('style', 'display:block;');
+
+		console.log('Received Event: ' + id);
+	},
+	// Application Constructor
+	initialize : function() {
+
+		alert("initialize");
+		this.bindEvents();
+
+		var self = this;
 		this.detailsURL = /^#employees\/(\d{1,})/;
 		this.registerEvents();
 		this.store = new MemoryStore(function() {
 			self.route();
 		});
-        
-    },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
-    },
-    // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicity call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-    },
-    // result contains any message sent from the plugin call
-    successHandler: function(result) {
-        alert('Callback Success! Result = '+result)
-    },
-    errorHandler:function(error) {
-        alert(error);
-    },
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
-        
-        alert("1");
-        var pushNotification = window.plugins.pushNotification;
-        pushNotification.register(app.successHandler, app.errorHandler,{"senderID":"346033639851","ecb":"app.onNotificationGCM"});
-        alert("2");
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
 
-        console.log('Received Event: ' + id);
-    },
-    
-    onNotificationGCM: function(e) {
-        switch( e.event )
-        {
-            case 'registered':
-                if ( e.regid.length > 0 )
-                {
-                    console.log("Regid " + e.regid);
-                    alert('registration id = '+e.regid);
-                }
-            break;
- 
-            case 'message':
-              // this is the actual push notification. its format depends on the data model from the push server
-              alert('message = '+e.message+' msgcnt = '+e.msgcnt);
-            break;
- 
-            case 'error':
-              alert('GCM error = '+e.msg);
-            break;
- 
-            default:
-              alert('An unknown GCM event has occurred');
-              break;
-        }
-    }
+	},
+
+	onNotificationGCM : function(e) {
+		switch (e.event) {
+		case 'registered':
+			if (e.regid.length > 0) {
+				console.log("Regid " + e.regid);
+				alert('registration id = ' + e.regid);
+			}
+			break;
+
+		case 'message':
+			// this is the actual push notification. its format depends on the
+			// data model from the push server
+			alert('message = ' + e.message + ' msgcnt = ' + e.msgcnt);
+			break;
+
+		case 'error':
+			alert('GCM error = ' + e.msg);
+			break;
+
+		default:
+			alert('An unknown GCM event has occurred');
+			break;
+		}
+	}
 };
 
 app.initialize();
