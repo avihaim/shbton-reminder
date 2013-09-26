@@ -110,8 +110,8 @@ var app = {
 	// The scope of 'this' is the event. In order to call the 'receivedEvent'
 	// function, we must explicity call 'app.receivedEvent(...);'
 	onDeviceReady : function() {
-		app.receivedEvent('deviceready');
 		
+		alert("onDeviceReady");
 		var pushNotification = window.plugins.pushNotification;
 		alert("1");
 		pushNotification.register(app.successHandler, app.errorHandler, {
@@ -119,6 +119,9 @@ var app = {
 			"ecb" : "app.onNotificationGCM"
 		});
 		alert("2");
+		app.receivedEvent('deviceready');
+		
+		
 	},
 	// result contains any message sent from the plugin call
 	successHandler : function(result) {
