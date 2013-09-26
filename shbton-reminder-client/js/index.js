@@ -103,9 +103,7 @@ var app = {
     	
     	this.bindEvents();
     	
-    	var pushNotification = window.plugins.pushNotification;
-        pushNotification.register(app.successHandler, app.errorHandler,{"senderID":"346033639851","ecb":"app.onNotificationGCM"});
-        
+    	
     	var self = this;
 		this.detailsURL = /^#employees\/(\d{1,})/;
 		this.registerEvents();
@@ -141,8 +139,10 @@ var app = {
         var listeningElement = parentElement.querySelector('.listening');
         var receivedElement = parentElement.querySelector('.received');
         
-        
-
+        alert("1");
+        var pushNotification = window.plugins.pushNotification;
+        pushNotification.register(app.successHandler, app.errorHandler,{"senderID":"346033639851","ecb":"app.onNotificationGCM"});
+        alert("2");
         listeningElement.setAttribute('style', 'display:none;');
         receivedElement.setAttribute('style', 'display:block;');
 
