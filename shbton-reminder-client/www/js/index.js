@@ -111,19 +111,7 @@ var app = {
 	// function, we must explicity call 'app.receivedEvent(...);'
 	onDeviceReady : function() {
 		app.receivedEvent('deviceready');
-	},
-	// result contains any message sent from the plugin call
-	successHandler : function(result) {
-		alert('Callback Success! Result = ' + result)
-	},
-	errorHandler : function(e) {
-		alert('Callback error! Result = ' +e.name + ": " + e.message + " "  + e.fileName);
-	},
-	// Update DOM on a Received Event
-	receivedEvent : function(id) {
 		
-		alert("receivedEvent");
-
 		var pushNotification = window.plugins.pushNotification;
 		alert("1");
 		pushNotification.register(app.successHandler, app.errorHandler, {
@@ -131,6 +119,16 @@ var app = {
 			"ecb" : "app.onNotificationGCM"
 		});
 		alert("2");
+	},
+	// result contains any message sent from the plugin call
+	successHandler : function(result) {
+		alert('Callback Success! Result = ' + result)
+	},
+	errorHandler : function(e) {
+		alert('Callback error! Result = ' +e);
+	},
+	// Update DOM on a Received Event
+	receivedEvent : function(id) {
 		
 		var parentElement = document.getElementById(id);
         var listeningElement = parentElement.querySelector('.listening');
