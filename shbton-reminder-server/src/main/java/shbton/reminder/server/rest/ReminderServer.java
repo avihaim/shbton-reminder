@@ -1,5 +1,7 @@
 package shbton.reminder.server.rest;
 
+import java.util.UUID;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -50,6 +52,15 @@ public class ReminderServer {
 		
 		reminderManger.addUserGeoLocation(userId, shbtongeoLocation);
 		return Response.ok().build();
+
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/notifications")
+	public Response notificationId(String notificationId) {
+		
+		return Response.ok(UUID.randomUUID().toString()).build();
 
 	}
 	
