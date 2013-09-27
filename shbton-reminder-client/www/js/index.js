@@ -18,6 +18,20 @@
  */
 var app = {
 
+	// Application Constructor
+	initialize : function() {
+
+		this.bindEvents();
+
+		var self = this;
+		this.detailsURL = /^#employees\/(\d{1,})/;
+		this.registerEvents();
+		this.store = new MemoryStore(function() {
+			self.route();
+		});
+
+	},
+
 	slidePage : function(page) {
 
 		var currentPageDest, self = this;
@@ -110,26 +124,21 @@ var app = {
 	// The scope of 'this' is the event. In order to call the 'receivedEvent'
 	// function, we must explicity call 'app.receivedEvent(...);'
 	onDeviceReady : function() {
-		
 		app.receivedEvent('deviceready');
-		
-		
-	},
-	// result contains any message sent from the plugin call
-	successHandler : function(result) {
-		alert('Callback Success! Result = ' + result)
-	},
-	errorHandler : function(e) {
-		alert('Callback error! Result = ' +e);
 	},
 	// Update DOM on a Received Event
 	receivedEvent : function(id) {
-		
+
 		alert("receivedEvent");
-		
+
 		var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
+		var listeningElement = parentElement.querySelector('.listening');
+		var receivedElement = parentElement.querySelector('.received');
+
+		listeningElement.setAttribute('style', 'display:none;');
+		receivedElement.setAttribute('style', 'display:block;');
+
+		console.log('Received Event: ' + id);
 
 		var pushNotification = window.plugins.pushNotification;
 		alert("1");
@@ -138,27 +147,15 @@ var app = {
 			"ecb" : "app.onNotificationGCM"
 		});
 		alert("2");
-		
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
-
-        console.log('Received Event: ' + id);
 
 	},
-	// Application Constructor
-	initialize : function() {
-
-		this.bindEvents();
-
-		var self = this;
-		this.detailsURL = /^#employees\/(\d{1,})/;
-		this.registerEvents();
-		this.store = new MemoryStore(function() {
-			self.route();
-		});
-
+	// result contains any message sent from the plugin call
+	successHandler : function(result) {
+		alert('Callback Success! Result = ' + result)
 	},
-
+	errorHandler : function(e) {
+		alert('Callback error! Result = ' + e);
+	},
 	onNotificationGCM : function(e) {
 		switch (e.event) {
 		case 'registered':
