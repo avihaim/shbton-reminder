@@ -3,10 +3,12 @@ package shbton.reminder.server.rest;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -25,12 +27,17 @@ import shbton.reminder.server.time.ZmanimManger;
 public class ReminderServer {
 
 	private static ReminderManger reminderManger;
+	private static ZmanimManger zmanimManger;
 	
-	static {
+	public static void init() {
 		ReminderDataBaseManger dataBaseManger = new ReminderCassandraManger();
-		ZmanimManger zmanimManger = new ShbtonZmanimCalendar();
-		NotificationManger notificationManger = new AndroidNotificationManger();
+		zmanimManger = new ShbtonZmanimCalendar();
+		NotificationManger notificationManger = new AndroidNotificationManger(dataBaseManger);
 		reminderManger = new ReminderMangerImpl(dataBaseManger,zmanimManger,notificationManger);
+	}
+	
+	public static void stop() {
+		((ReminderMangerImpl)reminderManger).stop();
 	}
 	
 	@PUT
@@ -56,12 +63,26 @@ public class ReminderServer {
 	}
 	
 	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Path("/notifications")
-	public Response notificationId(String notificationId) {
+	@Path("/{userId}/notifications")
+	public Response postNotificationId(@PathParam("userId") String userId,String notificationId) {
+		System.out.println("notificationId " + notificationId);
+		System.out.println("userId " + userId);
 		
-		return Response.ok(UUID.randomUUID().toString()).build();
-
+		reminderManger.updateNotificationId(userId,notificationId);
+		
+		return Response.ok().build();
 	}
+	
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getUUID() {
+		return UUID.randomUUID().toString();
+	}
+	
+//	@GET
+//	@Produces(MediaType.APPLICATION_JSON)
+//	public Response getCandleLighting(ShbtonGeoLocation shbtongeoLocation) {
+//		return Response.ok(zmanimManger.getThisWeekCandleLighting(shbtongeoLocation)).build();
+//	}
 	
 }

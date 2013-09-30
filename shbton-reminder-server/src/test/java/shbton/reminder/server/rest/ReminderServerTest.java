@@ -67,6 +67,7 @@ public class ReminderServerTest {
 	private static ColumnFamily<String, String> columnFamily;
 	private static ColumnFamily<String, Long> userGeoLocationCF;
 	private static ColumnFamily<String, ReminderEventId> userRemindersEventsCF;
+	private static ColumnFamily<String, String> userNotificationIdsCF;
 	 
 
 	@BeforeClass
@@ -159,6 +160,16 @@ public class ReminderServerTest {
 						.put("key_validation_class", "UTF8Type")
 						.put("comparator_type", "CompositeType(UTF8Type, TimeUUIDType)").build());
 		
+		userNotificationIdsCF = ColumnFamily.newColumnFamily(
+				ReminderCassandraManger.USER_NOTIFICATION_IDS_CF, StringSerializer.get(),
+				StringSerializer.get());
+
+		keyspace.createColumnFamily(
+				userNotificationIdsCF,
+				ImmutableMap.<String, Object> builder()
+						.put("default_validation_class", "UTF8Type")
+						.put("key_validation_class", "UTF8Type")
+						.put("comparator_type", "UTF8Type").build());
 		
 		
 	}
@@ -202,7 +213,7 @@ public class ReminderServerTest {
 		assertEquals(mapper.writeValueAsString(reminder), reminderString);
 		
 		List<DateTime> candleLighting = getThisWeekCandleLighting(shbtonGeoLocation);
-		List<ReminderEvent> remindersEvent = ReminderMangerImpl.calcThisWeekRemindersEvent(userId, "", reminder, candleLighting);
+		List<ReminderEvent> remindersEvent = ReminderMangerImpl.calcThisWeekRemindersEvent(userId, reminder, candleLighting);
 		
 		assertEquals(1, remindersEvent.size());
 		
@@ -242,5 +253,16 @@ public class ReminderServerTest {
 		czc.getCalendar().set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY);
 		DateTime candleLighting = new DateTime(czc.getCandleLighting());
 		return Collections.singletonList(candleLighting);
+	}
+	
+	@Test
+	public void testNotificationId() {
+		
+		String userId = UUID.randomUUID().toString();
+		
+		Response responseMsg = target.path("/users/" + userId +"/notifications").request().post(Entity.entity("notificationId", MediaType.TEXT_PLAIN));
+		assertNotNull(responseMsg);
+		assertEquals(Status.OK.getStatusCode(), responseMsg.getStatus());
+		
 	}
 }

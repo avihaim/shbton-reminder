@@ -8,4 +8,6 @@ public interface NotificationManger {
 
 	void pushReminderEventsNotifications(List<ReminderEvent> nowReminderEvents);
 
+	void updateNotificationId(String userId, String notificationId);
+
 }

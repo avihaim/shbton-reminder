@@ -19,11 +19,12 @@ import shbton.reminder.server.time.ZmanimManger;
 public class ReminderMangerImpl implements ReminderManger, Runnable {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ReminderMangerImpl.class);
-	
+	private boolean running = true; 
 	private ReminderDataBaseManger dataBaseManger; 
 	private ZmanimManger zmanimManger;
 	private NotificationManger notificationManger;
 	private long MINUTE= 1000*60;
+	private Object object = new Object();
 
 	public ReminderMangerImpl(ReminderDataBaseManger dataBaseManger, ZmanimManger zmanimManger,NotificationManger notificationManger) {
 		super();
@@ -50,7 +51,7 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 			List<ReminderEvent> oldRemindersEvent = new ArrayList<>();
 			
 			for (Reminder reminder : reminders) {
-				oldRemindersEvent.addAll(calcThisWeekRemindersEvent(userId,"",reminder,oldCandleLightingTime));
+				oldRemindersEvent.addAll(calcThisWeekRemindersEvent(userId,reminder,oldCandleLightingTime));
 			}
 			
 			List<ReminderEventId> reminderEventIds = dataBaseManger.getAllUserReminderEventsIds(userId,oldRemindersEvent);
@@ -60,7 +61,7 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 			List<ReminderEvent> newRemindersEvent = new ArrayList<>();
 			
 			for (Reminder reminder : reminders) {
-				newRemindersEvent.addAll(calcThisWeekRemindersEvent(userId,"",reminder,newCandleLightingTime));
+				newRemindersEvent.addAll(calcThisWeekRemindersEvent(userId,reminder,newCandleLightingTime));
 			}
 			
 			dataBaseManger.addReminderEvents(userId,newRemindersEvent);
@@ -74,12 +75,12 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		ShbtonGeoLocation shbtongeoLocation = dataBaseManger.getUserGeoLocation(userId);
 		List<DateTime> candleLighting = zmanimManger.getThisWeekCandleLighting(shbtongeoLocation);
 		
-		List<ReminderEvent> remindersEvent = calcThisWeekRemindersEvent(userId,"",reminder,candleLighting);
+		List<ReminderEvent> remindersEvent = calcThisWeekRemindersEvent(userId,reminder,candleLighting);
 		
 		dataBaseManger.addReminder(userId, reminder,remindersEvent);
 	}
 
-	public static List<ReminderEvent> calcThisWeekRemindersEvent(String userId, String userNotfictionId,Reminder reminder,
+	public static List<ReminderEvent> calcThisWeekRemindersEvent(String userId,Reminder reminder,
 			List<DateTime> candleLighting) {
 		
 		List<ReminderEvent> reminderEvents = new ArrayList<>();
@@ -87,7 +88,7 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		for (DateTime dateTime : candleLighting) {
 			if(reminder.getIsBefore()) {
 				long reminderEventTime = dateTime.minusDays(reminder.getDays()).minusHours(reminder.getHours()).minusMinutes(reminder.getMinutes()).getMillis();
-				reminderEvents.add( new ReminderEvent(userId, userNotfictionId, reminderEventTime, reminder.getText()));
+				reminderEvents.add( new ReminderEvent(userId, reminderEventTime, reminder.getText()));
 			}
 		}
 		
@@ -117,11 +118,12 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 	}
 
 	private void startPushEvents() {
+		System.out.println("startPushEvents");
 		logger.debug("startPushEvents");
 		
 		long startTime = System.currentTimeMillis();
 		
-		while (true) {
+		while (running) {
 			List<ReminderEvent> nowReminderEvents = dataBaseManger.getNowReminderEvents();
 			notificationManger.pushReminderEventsNotifications(nowReminderEvents);
 			//dataBaseManger.updateLastPushRun();
@@ -131,20 +133,35 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 			long left = MINUTE - (endTime - 	startTime);
 			
 			if (left > 0) {
+				System.out.println("sleep");
 				logger.debug("startPushEvents sleep");
 				sleep(left);
+				System.out.println("wake up");
 				logger.debug("startPushEvents wake up");
 			}
+			
 			
 			startTime = System.currentTimeMillis();
 		}
 	}
 
 	private void sleep(long left) {
+		
 		try {
-			Thread.sleep(left);
+			object.wait(left);
 		} catch (InterruptedException e) {
 		}
+	}
+
+	@Override
+	public void updateNotificationId(String userId, String notificationId) {
+		notificationManger.updateNotificationId(userId,notificationId);
+		
+	}
+	
+	public void stop() {
+		running = false;
+		object.notify();
 	}
 
 }

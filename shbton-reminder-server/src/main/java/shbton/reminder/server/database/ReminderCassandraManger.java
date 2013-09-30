@@ -2,7 +2,9 @@ package shbton.reminder.server.database;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -44,6 +46,7 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 	public static final String COLUMN_FAMILY = "usersReminders";
 	public static final String USER_GEO_LOCATION_CF = "userGeoLocation";
 	public static final String USER_REMINDERS_EVENTS_CF = "userRemindersEvents";
+	public static final String USER_NOTIFICATION_IDS_CF = "userNotificationIds";
 	// public static final String LAST_PUSH_RUN_CF = "lastPushRun";
 	public static final String KEYSPACE_NAME = "remindersKeyspace";
 	public static final String CLUSTER_NAME = "remindersCluster";
@@ -57,6 +60,7 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 	private ColumnFamily<String, String> usersRemindersCF;
 	private ColumnFamily<String, Long> userGeoLocationCF;
 	private ColumnFamily<String, ReminderEventId> userRemindersEventsCF;
+	private ColumnFamily<String, String> userNotificationIdsCF;
 
 	// private ColumnFamily<String, String> lastPushRun;
 
@@ -91,7 +95,10 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 		userRemindersEventsCF = new ColumnFamily<String, ReminderEventId>(
 				USER_REMINDERS_EVENTS_CF, StringSerializer.get(),
 				eventSerializer);
-
+		
+		userNotificationIdsCF = new ColumnFamily<String, String>(
+				USER_NOTIFICATION_IDS_CF, StringSerializer.get(),
+				StringSerializer.get());
 		// lastPushRun =
 		// new ColumnFamily<String, String>(
 		// LAST_PUSH_RUN_CF, StringSerializer.get(), StringSerializer.get());
@@ -336,6 +343,37 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 			logger.error("ConnectionException ", e);
 		}
 		return reminderEventIds;
+	}
+
+	@Override
+	public void updateNotificationId(String userId, String notificationId) {
+		MutationBatch batch = keyspace.prepareMutationBatch();
+		batch.withRow(userNotificationIdsCF, userId).putColumn(userId, notificationId);
+		try {
+			batch.execute();
+		} catch (ConnectionException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+	@Override
+	public Map<String, String> getUsersNotificationIds(List<String> users) {
+		
+		Map<String, String> userNotificationIds = new HashMap<String, String>();
+		ColumnFamilyQuery<String, String> query = keyspace.prepareQuery(userNotificationIdsCF);
+		OperationResult<Rows<String, String>> result;
+		try {
+			result = query.getRowSlice(users).execute();
+
+			for (Row<String, String> row : result.getResult()) {
+				userNotificationIds.put(row.getKey(), row.getColumns().getColumnByName(row.getKey()).getStringValue());
+			}
+		} catch (ConnectionException e) {
+			e.printStackTrace();
+		}
+		
+		return userNotificationIds;
 	}
 
 }

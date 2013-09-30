@@ -8,4 +8,6 @@ public interface ReminderManger {
 	void addReminder(String userId, Reminder reminder);
 	
 	 void addUserGeoLocation(String userId,ShbtonGeoLocation shbtongeoLocation);
+
+	void updateNotificationId(String userId, String notificationId);
 }

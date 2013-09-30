@@ -5,16 +5,14 @@ public class ReminderEvent {
 	long time;
 	String text;
 	String userId;
-	String userNotfictionId;
 	
 	public ReminderEvent() {
 	}
 	
-	public ReminderEvent(String userId, String userNotfictionId, long time,
+	public ReminderEvent(String userId, long time,
 			String text) {
 		super();
 		this.userId = userId;
-		this.userNotfictionId = userNotfictionId;
 		this.time = time;
 		this.text = text;
 	}
@@ -37,17 +35,11 @@ public class ReminderEvent {
 	public void setUserId(String userId) {
 		this.userId = userId;
 	}
-	public String getUserNotfictionId() {
-		return userNotfictionId;
-	}
-	public void setUserNotfictionId(String userNotfictionId) {
-		this.userNotfictionId = userNotfictionId;
-	}
 
 	@Override
 	public String toString() {
 		return "ReminderEvent [time=" + time + ", text=" + text + ", userId="
-				+ userId + ", userNotfictionId=" + userNotfictionId + "]";
+				+ userId +  "]";
 	}
 
 }

@@ -1,6 +1,7 @@
 package shbton.reminder.server.database;
 
 import java.util.List;
+import java.util.Map;
 
 import shbton.reminder.server.obj.Reminder;
 import shbton.reminder.server.obj.ReminderEvent;
@@ -25,5 +26,9 @@ public interface ReminderDataBaseManger {
 
 	List<ReminderEventId> getAllUserReminderEventsIds(String userId,
 			List<ReminderEvent> oldRemindersEvent);
+
+	void updateNotificationId(String userId, String notificationId);
+
+	Map<String, String> getUsersNotificationIds(List<String> users);
 
 }
