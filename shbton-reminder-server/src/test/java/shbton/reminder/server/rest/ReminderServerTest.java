@@ -265,4 +265,21 @@ public class ReminderServerTest {
 		assertEquals(Status.OK.getStatusCode(), responseMsg.getStatus());
 		
 	}
+	
+	@Test
+	public void testGetCandleLighting() {
+		
+		String userId = UUID.randomUUID().toString();
+		
+		Response responseMsg = target.path("candlelighting")
+									 .queryParam("locationName", "Tel Aviv - Israel")
+									 .queryParam("latitude", "32.0667")
+									 .queryParam("longitude", "34.7667")
+									 .queryParam("elevation", "0")
+									 .request().get();
+		assertNotNull(responseMsg);
+		assertEquals(Status.OK.getStatusCode(), responseMsg.getStatus());
+		
+	}
+	
 }
