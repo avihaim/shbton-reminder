@@ -74,7 +74,7 @@ public class ReminderServerTest {
 	public static void init() {
 		try {
 			initCassandra();
-
+			
 			// start the server
 			server = Main.startServer();
 			// create the client
@@ -86,6 +86,8 @@ public class ReminderServerTest {
 					.register(new Main.JsonMoxyConfigurationContextResolver())
 					.build();
 			target = c.target(Main.BASE_URI);
+			
+			ReminderServer.init();
 
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
@@ -176,6 +178,7 @@ public class ReminderServerTest {
 
 	@AfterClass
 	public static void tearDown() throws Exception {
+		ReminderServer.stop();
 		server.stop();
 		EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
 	}
@@ -187,6 +190,9 @@ public class ReminderServerTest {
 
 		String userId = UUID.randomUUID().toString();
 		String reminderId = UUID.randomUUID().toString();
+		String str = "{\"id\": 1, \"text\": \"dfv\", \"isShbat\": \"true\", \"isHoliday\":\"false\", \"isBefore\": \"false\", \"days\":0, \"hours\":1, \"minutes\":15}";
+		System.out.println(mapper.readValue(str, Reminder.class).toString());
+		
 		Reminder reminder = new Reminder(reminderId, "bla bla", true, false, true, 0, 1, 5);
 		
 		ShbtonGeoLocation shbtonGeoLocation = new ShbtonGeoLocation("Lakewood, NJ", 40.096, -74.222, 0, TimeZone.getTimeZone("America/New_York"));
@@ -199,7 +205,7 @@ public class ReminderServerTest {
 		
 		
 		Response responseMsg = target.path("users/" + userId + "/reminders").request()
-				.put(Entity.entity(reminder, MediaType.APPLICATION_JSON_TYPE));
+				.post(Entity.entity(reminder, MediaType.APPLICATION_JSON_TYPE));
 		assertEquals(Status.OK.getStatusCode(), responseMsg.getStatus());
 
 		OperationResult<ColumnList<String>> result = keyspace
@@ -268,8 +274,6 @@ public class ReminderServerTest {
 	
 	@Test
 	public void testGetCandleLighting() {
-		
-		String userId = UUID.randomUUID().toString();
 		
 		Response responseMsg = target.path("candlelighting")
 									 .queryParam("locationName", "Tel Aviv - Israel")

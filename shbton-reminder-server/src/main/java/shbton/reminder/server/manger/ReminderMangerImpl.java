@@ -2,6 +2,7 @@ package shbton.reminder.server.manger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,7 +25,6 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 	private ZmanimManger zmanimManger;
 	private NotificationManger notificationManger;
 	private long MINUTE= 1000*60;
-	private Object object = new Object();
 
 	public ReminderMangerImpl(ReminderDataBaseManger dataBaseManger, ZmanimManger zmanimManger,NotificationManger notificationManger) {
 		super();
@@ -33,7 +33,7 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		this.notificationManger = notificationManger;
 		
 		ExecutorService executor = Executors.newSingleThreadExecutor();
-		executor.submit(this);
+	//	executor.submit(this);
 	}
 	
 	public void addUserGeoLocation(String userId,ShbtonGeoLocation shbtongeoLocation) {
@@ -64,6 +64,8 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 				newRemindersEvent.addAll(calcThisWeekRemindersEvent(userId,reminder,newCandleLightingTime));
 			}
 			
+			logger.debug("addUserGeoLocation for userId : {} newRemindersEvent : {} ",userId,newRemindersEvent);
+			
 			dataBaseManger.addReminderEvents(userId,newRemindersEvent);
 		}
 		
@@ -76,6 +78,12 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		List<DateTime> candleLighting = zmanimManger.getThisWeekCandleLighting(shbtongeoLocation);
 		
 		List<ReminderEvent> remindersEvent = calcThisWeekRemindersEvent(userId,reminder,candleLighting);
+		
+		if("1".equals(reminder.getId())) {
+			reminder.setId( UUID.randomUUID().toString());
+		}
+		
+		logger.debug("addUserGeoLocation for userId : {} remindersEvent : {} ",userId,remindersEvent);
 		
 		dataBaseManger.addReminder(userId, reminder,remindersEvent);
 	}
@@ -118,7 +126,6 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 	}
 
 	private void startPushEvents() {
-		System.out.println("startPushEvents");
 		logger.debug("startPushEvents");
 		
 		long startTime = System.currentTimeMillis();
@@ -148,7 +155,7 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 	private void sleep(long left) {
 		
 		try {
-			object.wait(left);
+			Thread.sleep(left);
 		} catch (InterruptedException e) {
 		}
 	}
@@ -161,7 +168,22 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 	
 	public void stop() {
 		running = false;
-		object.notify();
+		//object.notify();
+	}
+
+	@Override
+	public List<Reminder> getUserReminders(String userId) {
+		logger.debug("getUserReminders - {}" ,userId);
+		List<Reminder> userReminders = dataBaseManger.getUserReminders(userId);
+		
+		logger.debug("getUserReminders - {}",userReminders);
+		
+		return userReminders;
+	}
+
+	@Override
+	public ShbtonGeoLocation getUserGeoLocation(String userId) {
+		return dataBaseManger.getUserGeoLocation(userId);
 	}
 
 }

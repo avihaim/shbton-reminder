@@ -1,20 +1,24 @@
 package shbton.reminder.server.rest;
 
-import java.util.TimeZone;
+import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
+import org.codehaus.jackson.map.ObjectMapper;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import shbton.reminder.server.Main;
 import shbton.reminder.server.database.ReminderCassandraManger;
 import shbton.reminder.server.database.ReminderDataBaseManger;
 import shbton.reminder.server.manger.AndroidNotificationManger;
@@ -28,7 +32,9 @@ import shbton.reminder.server.time.ZmanimManger;
 
 @Path("/users")
 public class ReminderServer {
-
+	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+	private static ObjectMapper mapper = new ObjectMapper();
+	
 	private static ReminderManger reminderManger;
 	private static ZmanimManger zmanimManger;
 	
@@ -43,24 +49,60 @@ public class ReminderServer {
 		((ReminderMangerImpl)reminderManger).stop();
 	}
 	
-	@PUT
-	@Consumes(MediaType.APPLICATION_JSON)
+	@POST
 	@Path("/{userId}/reminders")
 	public Response putNewReminder(@PathParam("userId") String userId,
-			Reminder reminder) {
+			String reminderString) {
 		
-		reminderManger.addReminder(userId, reminder);
+		try {
+			logger.debug("Start in putNewReminder for user {}",userId);
+			Reminder reminder = mapper.readValue(reminderString, Reminder.class);
+			
+			reminderManger.addReminder(userId, reminder);
+			
+			logger.debug("End in putNewReminder for user {}",userId);
+		} catch (IOException e) {
+			logger.error("error in putNewReminder for user {}",userId,e);
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+		}
+		
 		return Response.ok().build();
 
 	}
 	
+	@GET
+	@Path("/{userId}/reminders")
+	public Response getReminders(@PathParam("userId") String userId) {
+
+		List<Reminder> reminders =  reminderManger.getUserReminders(userId);
+
+		try {
+			return Response.ok(mapper.writeValueAsString(reminders)).build();
+		} catch ( IOException e) {
+			logger.error("error in getReminders for user {}",userId,e);
+		}
+		return Response.noContent().build();
+	}
+	
+	
 	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/{userId}/geolocations")
 	public Response addUserGeoLocation(@PathParam("userId") String userId,
-			ShbtonGeoLocation shbtongeoLocation) {
+			String shbtongeoLocationString) {
 		
-		reminderManger.addUserGeoLocation(userId, shbtongeoLocation);
+		ShbtonGeoLocation shbtonGeoLocation;
+		
+		try {
+			shbtonGeoLocation = mapper.readValue(shbtongeoLocationString, ShbtonGeoLocation.class);
+			logger.debug(" addUserGeoLocation - userId : {} data : {}",userId,shbtonGeoLocation.toString());
+			reminderManger.addUserGeoLocation(userId, shbtonGeoLocation);
+			logger.debug(" addUserGeoLocation - userId : {} ",userId);
+		} catch (IOException e) {
+			logger.error("error in addUserGeoLocation for user {}",userId,e);
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+		}
+		
+		
 		return Response.ok().build();
 
 	}
@@ -68,8 +110,7 @@ public class ReminderServer {
 	@POST
 	@Path("/{userId}/notifications")
 	public Response postNotificationId(@PathParam("userId") String userId,String notificationId) {
-		System.out.println("notificationId " + notificationId);
-		System.out.println("userId " + userId);
+		logger.debug("Start in postNotificationId for user {} and notificationId",userId);
 		
 		reminderManger.updateNotificationId(userId,notificationId);
 		
@@ -83,14 +124,13 @@ public class ReminderServer {
 	}
 	
 	@GET
-	@Path("candlelighting")
-	public Response getCandleLighting(@QueryParam("locationName") String locationName,
-									 @QueryParam("latitude") double latitude,
-									 @QueryParam("longitude") double longitude,
-									 @QueryParam("elevation") @DefaultValue(value="0") double elevation) {
+	@Path("/{userId}/candlelighting")
+	public Response getCandleLighting(@PathParam("userId") String userId) {
+		logger.debug("getCandleLighting for userId : {} ",userId);
+		ShbtonGeoLocation shbtonGeoLocation = reminderManger.getUserGeoLocation(userId);
+		List<DateTime> candleLighting = zmanimManger.getThisWeekCandleLighting(shbtonGeoLocation);
 		
-		zmanimManger.getThisWeekCandleLighting(new ShbtonGeoLocation(locationName,latitude,longitude,elevation,null));
+		logger.debug("getCandleLighting for userId : {} are : {}",userId,candleLighting);
 		return Response.ok().build();
 	}
-
 }

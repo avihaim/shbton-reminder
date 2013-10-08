@@ -52,5 +52,14 @@ public class ShbtonGeoLocation {
 	public void setTimeZone(TimeZone timeZone) {
 		this.timeZone = timeZone;
 	}
+
+	@Override
+	public String toString() {
+		return "ShbtonGeoLocation [locationName=" + locationName
+				+ ", latitude=" + latitude + ", longitude=" + longitude
+				+ ", elevation=" + elevation + ", timeZone=" + timeZone + "]";
+	}
+	
+	
 	
 }

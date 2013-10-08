@@ -63,19 +63,19 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 	private ColumnFamily<String, String> userNotificationIdsCF;
 
 	// private ColumnFamily<String, String> lastPushRun;
-
+ 
 	public ReminderCassandraManger() {
 		AstyanaxContext<Keyspace> context = new AstyanaxContext.Builder()
 				.forCluster(CLUSTER_NAME)
 				.forKeyspace(KEYSPACE_NAME)
 				.withAstyanaxConfiguration(
 						new AstyanaxConfigurationImpl()
-								.setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE))
+								.setDiscoveryType(NodeDiscoveryType.NONE))
 				.withConnectionPoolConfiguration(
 						new ConnectionPoolConfigurationImpl(
 								"reminderConnectionPool").setPort(9160)
-								.setMaxConnsPerHost(1)
-								.setSeeds("localhost:9160"))
+								.setMaxConnsPerHost(5)
+								.setSeeds("vmedu34.mtacloud.co.il:9160"))
 				.withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
 				.buildKeyspace(ThriftFamilyFactory.getInstance());
 
@@ -140,6 +140,10 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 
 	private String makeKey(ReminderEvent reminderEvent) {
 		DateTime dateTime = new DateTime(reminderEvent.getTime());
+		return format(dateTime);
+	}
+
+	private String format(DateTime dateTime) {
 		return String.format("%s_%s_%s-%s_%s", dateTime.getYear(),
 				dateTime.getMonthOfYear(), dateTime.getDayOfMonth(),
 				dateTime.getHourOfDay(), dateTime.getMinuteOfHour());
@@ -148,9 +152,7 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 	private String makeKey(ReminderEventId reminderEvent) {
 		DateTime dateTime = new DateTime(reminderEvent.getTimestamp()
 				.timestamp());
-		return String.format("%s_%s_%s-%s_%s", dateTime.getYear(),
-				dateTime.getMonthOfYear(), dateTime.getDayOfMonth(),
-				dateTime.getHourOfDay(), dateTime.getMinuteOfHour());
+		return format(dateTime);
 	}
 
 	@Override
@@ -229,9 +231,7 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 
 	private String getKey() {
 		DateTime dateTime = DateTime.now();
-		return String.format("%s_%s_%s-%s_%s", dateTime.getYear(),
-				dateTime.getMonthOfYear(), dateTime.getDayOfMonth(),
-				dateTime.getHourOfDay(), dateTime.getMinuteOfHour());
+		return format(dateTime);
 	}
 
 	@Override
@@ -254,7 +254,7 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 
 		try {
 			OperationResult<ColumnList<String>> nowRemindersEventsResult = keyspace
-					.prepareQuery(usersRemindersCF).getKey(getKey()).execute();
+					.prepareQuery(usersRemindersCF).getKey(userId).execute();
 
 			ColumnList<String> result = nowRemindersEventsResult.getResult();
 			for (Column<String> column : result) {

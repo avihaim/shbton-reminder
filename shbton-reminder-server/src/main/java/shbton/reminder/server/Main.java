@@ -10,11 +10,12 @@ import javax.ws.rs.ext.Provider;
 
 import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.thrift.transport.TTransportException;
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import shbton.reminder.server.database.ReminderCassandraManger;
 import shbton.reminder.server.database.ReminderEventId;
@@ -39,8 +40,12 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
  */
 public class Main {
 	
+//	public static final String CASSANDRA_HOST = "localhost:9160";
+	public static final String CASSANDRA_HOST = "vmedu34.mtacloud.co.il:9160";
 	// Base URI the Grizzly HTTP server will listen on
 	public static final String BASE_URI = "http://192.168.1.100:8080/shbton/";
+	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
 
 	/**
 	 * Starts Grizzly HTTP server exposing JAX-RS resources defined in this
@@ -55,7 +60,8 @@ public class Main {
 
 		// create and start a new instance of grizzly http server
 		// exposing the Jersey application at BASE_URI
-		
+		logger.info("startServer");
+
 		return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI),
 					createApp());
 	
@@ -75,7 +81,8 @@ public class Main {
 		HttpServer server = null;
 		
 		try {
-		    initCassandra();
+			
+		   // initCassandra();
 		
 			server = startServer();
 			
@@ -87,14 +94,14 @@ public class Main {
 					BASE_URI));
 			System.in.read();
 		} catch (Exception e) {
-			
+			e.printStackTrace();
 		} finally {
 			ReminderServer.stop();
 			
 			if(server != null) {
 				server.stop();
 			}
-			EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
+			//EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
 		}
 		
 	}
@@ -130,7 +137,7 @@ public class Main {
 		ColumnFamily<String, Long> userGeoLocationCF;
 		ColumnFamily<String, ReminderEventId> userRemindersEventsCF;
 
-		EmbeddedCassandraServerHelper.startEmbeddedCassandra("/cassandra.yaml");
+		//EmbeddedCassandraServerHelper.startEmbeddedCassandra("/cassandra.yaml");
 
 		AstyanaxContext<Keyspace> ctx = new AstyanaxContext.Builder()
 				.forKeyspace(ReminderCassandraManger.KEYSPACE_NAME)
@@ -142,7 +149,7 @@ public class Main {
 						new ConnectionPoolConfigurationImpl(
 								"reminderConnectionPool").setPort(9160)
 								.setMaxConnsPerHost(1)
-								.setSeeds("localhost:9160"))
+								.setSeeds(CASSANDRA_HOST))
 				.withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
 				.buildKeyspace(ThriftFamilyFactory.getInstance());
 
@@ -206,5 +213,7 @@ public class Main {
 						.put("comparator_type", "UTF8Type").build());
 
 	}
+	
+	
 
 }

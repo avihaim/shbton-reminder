@@ -114,6 +114,15 @@ public class Reminder {
 	public void setText(String text) {
 		this.text = text;
 	}
+
+
+	@Override
+	public String toString() {
+		return "Reminder [id=" + id + ", text=" + text + ", isShbat=" + isShbat
+				+ ", isHoliday=" + isHoliday + ", isBefore=" + isBefore
+				+ ", days=" + days + ", hours=" + hours + ", minutes="
+				+ minutes + "]";
+	}
 	
 	
 
