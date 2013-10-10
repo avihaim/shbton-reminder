@@ -43,6 +43,8 @@ public class AndroidNotificationManger implements NotificationManger {
 		
 		Map<String,String> usersNotificationIds = dataBaseManger.getUsersNotificationIds(users);
 		
+		logger.debug("usersNotificationIds {} ",usersNotificationIds);
+		
 		Map<String,List<ReminderEvent>> reminderEventsMap = new HashMap<>();
 		
 		for (ReminderEvent reminderEvent : nowReminderEvents) {
@@ -56,9 +58,10 @@ public class AndroidNotificationManger implements NotificationManger {
 			try {
 				sendNotification(entry.getKey(),entry.getValue());
 			} catch (IOException e) {
-				e.printStackTrace();
+				logger.warn("IOException in sendNotification",e);
 			}
 		}
+		logger.debug("end pushReminderEventsNotifications ");
 		
 	}
 	

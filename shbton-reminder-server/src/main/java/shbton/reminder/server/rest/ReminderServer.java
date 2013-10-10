@@ -18,7 +18,6 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import shbton.reminder.server.Main;
 import shbton.reminder.server.database.ReminderCassandraManger;
 import shbton.reminder.server.database.ReminderDataBaseManger;
 import shbton.reminder.server.manger.AndroidNotificationManger;
@@ -26,13 +25,14 @@ import shbton.reminder.server.manger.NotificationManger;
 import shbton.reminder.server.manger.ReminderManger;
 import shbton.reminder.server.manger.ReminderMangerImpl;
 import shbton.reminder.server.obj.Reminder;
+import shbton.reminder.server.time.CandleLightingTime;
 import shbton.reminder.server.time.ShbtonGeoLocation;
 import shbton.reminder.server.time.ShbtonZmanimCalendar;
 import shbton.reminder.server.time.ZmanimManger;
 
 @Path("/users")
 public class ReminderServer {
-	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+	private static final Logger logger = LoggerFactory.getLogger(ReminderServer.class);
 	private static ObjectMapper mapper = new ObjectMapper();
 	
 	private static ReminderManger reminderManger;
@@ -72,16 +72,10 @@ public class ReminderServer {
 	
 	@GET
 	@Path("/{userId}/reminders")
-	public Response getReminders(@PathParam("userId") String userId) {
-
-		List<Reminder> reminders =  reminderManger.getUserReminders(userId);
-
-		try {
-			return Response.ok(mapper.writeValueAsString(reminders)).build();
-		} catch ( IOException e) {
-			logger.error("error in getReminders for user {}",userId,e);
-		}
-		return Response.noContent().build();
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Reminder> getReminders(@PathParam("userId") String userId) {
+		logger.debug(" getReminders - userId : {} ",userId);
+		return reminderManger.getUserReminders(userId);
 	}
 	
 	
@@ -129,8 +123,8 @@ public class ReminderServer {
 		logger.debug("getCandleLighting for userId : {} ",userId);
 		ShbtonGeoLocation shbtonGeoLocation = reminderManger.getUserGeoLocation(userId);
 		List<DateTime> candleLighting = zmanimManger.getThisWeekCandleLighting(shbtonGeoLocation);
-		
 		logger.debug("getCandleLighting for userId : {} are : {}",userId,candleLighting);
-		return Response.ok().build();
+		
+		return Response.ok(new CandleLightingTime(candleLighting.get(0).getMillis())).build();
 	}
 }

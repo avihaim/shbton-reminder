@@ -8,17 +8,18 @@ import shbton.reminder.server.obj.ReminderEvent;
 import shbton.reminder.server.time.ShbtonGeoLocation;
 
 public interface ReminderDataBaseManger {
+	
 	void addReminder(String userId, Reminder reminder, List<ReminderEvent> remindersEvent);
-
+	
+	List<Reminder> getUserReminders(String userId);
+	
 	ShbtonGeoLocation getUserGeoLocation(String userId);
 
 	void addUserGeoLocation(String userId,ShbtonGeoLocation shbtongeoLocation);
 	
+	Map<String, ShbtonGeoLocation> getUsersGeoLocations(List<String> userIds);
+	
 	List<ReminderEvent> getNowReminderEvents();
-
-	void updateLastPushRun();
-
-	List<Reminder> getUserReminders(String userId);
 
 	void deleteReminderEvents(List<ReminderEventId> reminderEventIds);
 
@@ -27,8 +28,13 @@ public interface ReminderDataBaseManger {
 	List<ReminderEventId> getAllUserReminderEventsIds(String userId,
 			List<ReminderEvent> oldRemindersEvent);
 
+	
 	void updateNotificationId(String userId, String notificationId);
 
 	Map<String, String> getUsersNotificationIds(List<String> users);
+
+	Reminder getUserReminder(String userId, String id);
+
+	
 
 }

@@ -2,19 +2,21 @@ package shbton.reminder.server.obj;
 
 public class ReminderEvent {
 	
-	long time;
-	String text;
-	String userId;
+	private long time;
+	private String text;
+	private String userId;
+	private long candleLighting;
 	
 	public ReminderEvent() {
 	}
 	
 	public ReminderEvent(String userId, long time,
-			String text) {
+			String text,long candleLighting) {
 		super();
 		this.userId = userId;
 		this.time = time;
 		this.text = text;
+		this.setCandleLighting(candleLighting);
 	}
 	
 	public long getTime() {
@@ -40,6 +42,14 @@ public class ReminderEvent {
 	public String toString() {
 		return "ReminderEvent [time=" + time + ", text=" + text + ", userId="
 				+ userId +  "]";
+	}
+
+	public long getCandleLighting() {
+		return candleLighting;
+	}
+
+	public void setCandleLighting(long candleLighting) {
+		this.candleLighting = candleLighting;
 	}
 
 }

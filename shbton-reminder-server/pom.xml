@@ -38,7 +38,6 @@
 			<groupId>org.apache.cassandra</groupId>
 			<artifactId>cassandra-all</artifactId>
 			<version>1.2.0</version>
-
 			<exclusions>
 				<exclusion>
 					<groupId>org.slf4j</groupId>
@@ -58,16 +57,19 @@
 			<groupId>com.netflix.astyanax</groupId>
 			<artifactId>astyanax-core</artifactId>
 			<version>1.56.42</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.netflix.astyanax</groupId>
 			<artifactId>astyanax-thrift</artifactId>
 			<version>1.56.42</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.netflix.astyanax</groupId>
 			<artifactId>astyanax-cassandra</artifactId>
 			<version>1.56.42</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.cassandraunit</groupId>
@@ -100,11 +102,13 @@
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-jaxrs</artifactId>
 			<version>1.9.13</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-core-asl</artifactId>
 			<version>1.9.13</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
@@ -192,9 +196,41 @@
 					</execution>
 				</executions>
 				<configuration>
-					<mainClass>com.example.Main</mainClass>
+					<mainClass>shbton.reminder.server.Main</mainClass>
 				</configuration>
 			</plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>shbton.reminder.server.Main</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 		</plugins>
 	</build>
 </project>

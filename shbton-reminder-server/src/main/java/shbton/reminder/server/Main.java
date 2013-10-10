@@ -40,10 +40,10 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
  */
 public class Main {
 	
-//	public static final String CASSANDRA_HOST = "localhost:9160";
 	public static final String CASSANDRA_HOST = "vmedu34.mtacloud.co.il:9160";
+//	public static final String CASSANDRA_HOST = "localhost:9160";
 	// Base URI the Grizzly HTTP server will listen on
-	public static final String BASE_URI = "http://192.168.1.100:8080/shbton/";
+	public static final String BASE_URI = "http://0.0.0.0:8080/shbton/";
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
 

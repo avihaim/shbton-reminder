@@ -1,7 +1,12 @@
 package shbton.reminder.server.manger;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,7 +38,7 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		this.notificationManger = notificationManger;
 		
 		ExecutorService executor = Executors.newSingleThreadExecutor();
-	//	executor.submit(this);
+		executor.submit(this);
 	}
 	
 	public void addUserGeoLocation(String userId,ShbtonGeoLocation shbtongeoLocation) {
@@ -43,20 +48,11 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		
 		if(userOldGeoLocation != null) {
 			
-			List<DateTime> oldCandleLightingTime = zmanimManger.getThisWeekCandleLighting(userOldGeoLocation);
-			List<DateTime> newCandleLightingTime = zmanimManger.getThisWeekCandleLighting(shbtongeoLocation);
-			
 			List<Reminder> reminders =  dataBaseManger.getUserReminders(userId);
 			
-			List<ReminderEvent> oldRemindersEvent = new ArrayList<>();
+			deleteUserReminderEvents(userId,userOldGeoLocation,reminders);
 			
-			for (Reminder reminder : reminders) {
-				oldRemindersEvent.addAll(calcThisWeekRemindersEvent(userId,reminder,oldCandleLightingTime));
-			}
-			
-			List<ReminderEventId> reminderEventIds = dataBaseManger.getAllUserReminderEventsIds(userId,oldRemindersEvent);
-			
-			dataBaseManger.deleteReminderEvents(reminderEventIds);
+			List<DateTime> newCandleLightingTime = zmanimManger.getThisWeekCandleLighting(shbtongeoLocation);
 			
 			List<ReminderEvent> newRemindersEvent = new ArrayList<>();
 			
@@ -72,18 +68,46 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		
 	}
 
+	private void deleteUserReminderEvents(String userId,
+			ShbtonGeoLocation userOldGeoLocation, List<Reminder> reminders) {
+		logger.debug("deleteUserReminderEvents for userId : {} reminder : {} ",userId,reminders);
+		
+		List<DateTime> oldCandleLightingTime = zmanimManger.getThisWeekCandleLighting(userOldGeoLocation);
+		List<ReminderEvent> oldRemindersEvent = new ArrayList<>();
+		
+		for (Reminder reminder : reminders) {
+			oldRemindersEvent.addAll(calcThisWeekRemindersEvent(userId,reminder,oldCandleLightingTime));
+		}
+		
+		List<ReminderEventId> reminderEventIds = dataBaseManger.getAllUserReminderEventsIds(userId,oldRemindersEvent);
+		
+		dataBaseManger.deleteReminderEvents(reminderEventIds);
+	}
+
 	public void addReminder(String userId, Reminder reminder) {
 		
 		ShbtonGeoLocation shbtongeoLocation = dataBaseManger.getUserGeoLocation(userId);
 		List<DateTime> candleLighting = zmanimManger.getThisWeekCandleLighting(shbtongeoLocation);
 		
-		List<ReminderEvent> remindersEvent = calcThisWeekRemindersEvent(userId,reminder,candleLighting);
 		
-		if("1".equals(reminder.getId())) {
+		if("0".equals(reminder.getId())) {
 			reminder.setId( UUID.randomUUID().toString());
+		} else {
+			Reminder oldReminder = dataBaseManger.getUserReminder(userId,reminder.getId());
+			
+			if ((oldReminder.getDays() != reminder.getDays()) || 
+				(oldReminder.getHours() != reminder.getHours()) ||
+				(oldReminder.getMinutes() != reminder.getMinutes())) {
+				
+				deleteUserReminderEvents(userId,shbtongeoLocation,Collections.singletonList(oldReminder));
+			}
 		}
 		
-		logger.debug("addUserGeoLocation for userId : {} remindersEvent : {} ",userId,remindersEvent);
+		logger.debug("addReminder for userId : {} reminder : {} ",userId,reminder);
+		
+		List<ReminderEvent> remindersEvent = calcThisWeekRemindersEvent(userId,reminder,candleLighting);
+		
+		logger.debug("addReminder for userId : {} remindersEvent : {} ",userId,remindersEvent);
 		
 		dataBaseManger.addReminder(userId, reminder,remindersEvent);
 	}
@@ -96,13 +120,46 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		for (DateTime dateTime : candleLighting) {
 			if(reminder.getIsBefore()) {
 				long reminderEventTime = dateTime.minusDays(reminder.getDays()).minusHours(reminder.getHours()).minusMinutes(reminder.getMinutes()).getMillis();
-				reminderEvents.add( new ReminderEvent(userId, reminderEventTime, reminder.getText()));
+				reminderEvents.add( new ReminderEvent(userId, reminderEventTime, reminder.getText(),dateTime.getMillis()));
 			}
 		}
 		
 		return reminderEvents;
 		
 	}
+	
+	public Map<String,List<ReminderEvent>> calcNextWeekRemindersEvent(List<ReminderEvent> reminders) {
+		
+		Map<String,List<ReminderEvent>> reminderEventsMap = new HashMap<String, List<ReminderEvent>>();
+		List<String> userIds = new ArrayList<>();
+		
+		for (ReminderEvent reminderEvent : reminders) {
+			userIds.add(reminderEvent.getUserId());
+		}
+		
+		Map<String,ShbtonGeoLocation> usersGeoLocation = dataBaseManger.getUsersGeoLocations(userIds);
+		
+		Map<String, List<DateTime>> usersTimes = zmanimManger.getNextWeekCandleLighting(usersGeoLocation);
+		
+		for (ReminderEvent reminderEvent : reminders) {
+			String userId = reminderEvent.getUserId();
+			List<DateTime> times = usersTimes.get(userId);
+			long newTime = reminderEvent.getCandleLighting() - times.get(0).getMillis();
+			List<ReminderEvent> list = null;
+			
+			if(reminderEventsMap.containsKey(userId)) {
+				list = reminderEventsMap.get(userId);
+			} else {
+				list = new ArrayList<>();
+			}
+			list.add(new ReminderEvent(userId,newTime,reminderEvent.getText(),times.get(0).getMillis()));
+			reminderEventsMap.put(userId, list);
+		}
+		
+		return reminderEventsMap;
+		
+	}
+
 
 	public ReminderDataBaseManger getDataBaseManger() {
 		return dataBaseManger;
@@ -132,23 +189,33 @@ public class ReminderMangerImpl implements ReminderManger, Runnable {
 		
 		while (running) {
 			List<ReminderEvent> nowReminderEvents = dataBaseManger.getNowReminderEvents();
+			
+			logger.debug("pushNotifications Events : {} ",nowReminderEvents);
+			
 			notificationManger.pushReminderEventsNotifications(nowReminderEvents);
-			//dataBaseManger.updateLastPushRun();
+			Map<String, List<ReminderEvent>> nextWeekRemindersEvent = calcNextWeekRemindersEvent(nowReminderEvents);
+			
+			saveNextWeekRemindersEvent(nextWeekRemindersEvent);
 			
 			long endTime = System.currentTimeMillis();
 			
 			long left = MINUTE - (endTime - 	startTime);
 			
 			if (left > 0) {
-				System.out.println("sleep");
 				logger.debug("startPushEvents sleep");
 				sleep(left);
-				System.out.println("wake up");
 				logger.debug("startPushEvents wake up");
 			}
 			
 			
 			startTime = System.currentTimeMillis();
+		}
+	}
+
+	private void saveNextWeekRemindersEvent(Map<String, List<ReminderEvent>> nextWeekRemindersEvent) {
+		Set<Entry<String, List<ReminderEvent>>> entrySet = nextWeekRemindersEvent.entrySet();
+		for (Entry<String, List<ReminderEvent>> entry : entrySet) {
+			dataBaseManger.addReminderEvents(entry.getKey(), entry.getValue());
 		}
 	}
 

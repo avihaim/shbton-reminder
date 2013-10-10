@@ -13,6 +13,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import shbton.reminder.server.Main;
 import shbton.reminder.server.obj.Reminder;
 import shbton.reminder.server.obj.ReminderEvent;
 import shbton.reminder.server.time.ShbtonGeoLocation;
@@ -75,7 +76,7 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 						new ConnectionPoolConfigurationImpl(
 								"reminderConnectionPool").setPort(9160)
 								.setMaxConnsPerHost(5)
-								.setSeeds("vmedu34.mtacloud.co.il:9160"))
+								.setSeeds(Main.CASSANDRA_HOST))
 				.withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
 				.buildKeyspace(ThriftFamilyFactory.getInstance());
 
@@ -235,19 +236,6 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 	}
 
 	@Override
-	public void updateLastPushRun() {
-		// MutationBatch batch = keyspace.prepareMutationBatch();
-		//
-		// batch.withRow(lastPushRun, "lastPushRun").putColumn("lastPushRun",
-		// System.currentTimeMillis());
-		// try {
-		// batch.execute();
-		// } catch (ConnectionException e) {
-		// e.printStackTrace();
-		// }
-	}
-
-	@Override
 	public List<Reminder> getUserReminders(String userId) {
 
 		List<Reminder> reminders = new ArrayList<>();
@@ -374,6 +362,40 @@ public class ReminderCassandraManger implements ReminderDataBaseManger {
 		}
 		
 		return userNotificationIds;
+	}
+
+	@Override
+	public Map<String, ShbtonGeoLocation> getUsersGeoLocations(
+			List<String> userIds)  {
+		
+		
+		Map<String, ShbtonGeoLocation> usersGeoLocations = new HashMap<String, ShbtonGeoLocation>();
+		
+		ColumnFamilyQuery<String, Long> query = keyspace.prepareQuery(userGeoLocationCF);
+		OperationResult<Rows<String, Long>> result;
+		try {
+			result = query.getRowSlice(userIds).withColumnRange(Long.MAX_VALUE, 0l, true, 1).execute();
+
+			for (Row<String, Long> row : result.getResult()) {
+				usersGeoLocations.put(row.getKey(), mapper.readValue(row.getColumns().getColumnByIndex(0).getStringValue(),ShbtonGeoLocation.class));
+			}
+		} catch (ConnectionException | IOException e) {
+			e.printStackTrace();
+		}
+		
+		return usersGeoLocations;
+	}
+
+	@Override
+	public Reminder getUserReminder(String userId, String id) {
+		ColumnFamilyQuery<String, String> query = keyspace.prepareQuery(usersRemindersCF);
+		try {
+			OperationResult<Column<String>> result = query.getKey(userId).getColumn(id).execute();
+			return mapper.readValue(result.getResult().getStringValue(),Reminder.class);
+		} catch (ConnectionException |  IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }
